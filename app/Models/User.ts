@@ -31,7 +31,7 @@ export default class User extends BaseModel {
   public role: string;
 
   @column()
-  public isActive: number;
+  public is_active: boolean;
 
   // @column()
   // public rememberMeToken?: string | null;
