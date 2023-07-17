@@ -1,9 +1,9 @@
 import Route from "@ioc:Adonis/Core/Route";
 
 Route.post("/login", "AuthController.login").as("login");
-Route.group(() => {
-  Route.post("/logout", "AuthController.logout").as("logout");
+Route.post("/logout", "AuthController.logout").as("logout").middleware("auth");
 
+Route.group(() => {
   //Route Admin Management Member
   Route.get("/members", "Admin/members/MembersController.getMembers").as(
     "Getmembers"
@@ -23,4 +23,5 @@ Route.group(() => {
   ).as("Deletemember");
 })
   .prefix("/api")
-  .middleware("auth");
+  .middleware("auth")
+  .middleware("admin");
