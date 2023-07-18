@@ -6,8 +6,15 @@ export default class extends BaseSchema {
   public async up() {
     this.schema.createTable(this.tableName, (table) => {
       table.increments("id");
-      table.integer("itemsId").unsigned().references("id").inTable("items");
-      table.string("reason", 255).notNullable();
+      table
+        .integer("itemsId")
+        .unsigned()
+        .references("id")
+        .inTable("items")
+        .onUpdate("CASCADE")
+        .onDelete("CASCADE")
+        .notNullable();
+      table.string("reason", 100).defaultTo("Pengajuan anda telah di setujui");
       table.timestamp("created_at").defaultTo(this.raw("CURRENT_TIMESTAMP"));
     });
   }

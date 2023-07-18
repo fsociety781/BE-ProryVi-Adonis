@@ -5,16 +5,25 @@ export default class extends BaseSchema {
 
   public async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.increments("id").primary();
-      table.integer("userId").unsigned().references("id").inTable("users");
+      table.increments("id");
+      table
+        .integer("userId")
+        .unsigned()
+        .references("id")
+        .inTable("users")
+        .nullable()
+        .onDelete("SET NULL");
       table
         .integer("detailId")
         .unsigned()
-        .references("id")
-        .inTable("detail_items");
+        .references("detail_items.id")
+        .onUpdate("CASCADE")
+        .onDelete("CASCADE")
+        .nullable();
       table
-        .enum("status", ["Onprocces", "Approved", "Rejected"])
-        .defaultTo("Onprocces");
+        .enum("status", ["Onprocces", "Approve", "Reject"])
+        .defaultTo("Onprocces")
+        .notNullable();
       table.timestamp("created_at").defaultTo(this.raw("CURRENT_TIMESTAMP"));
       table
         .timestamp("updated_at")

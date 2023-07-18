@@ -10,13 +10,17 @@ export default class extends BaseSchema {
         .integer("categoryId")
         .unsigned()
         .references("id")
-        .inTable("categories");
-      table.string("name", 255).notNullable();
-      table.integer("description", 225).notNullable();
-      table.integer("quantity", 11).notNullable();
+        .inTable("categories")
+        .onUpdate("CASCADE")
+        .onDelete("CASCADE")
+        .notNullable();
+      table.string("name", 100).notNullable();
+      table.string("description", 225).notNullable();
+      table.string("url", 225).notNullable();
+      table.integer("quantity").notNullable();
       table.float("price").notNullable();
       table.float("total").notNullable();
-      table.datetime("duedate").notNullable();
+      table.dateTime("duedate").notNullable();
     });
   }
 

@@ -21,6 +21,22 @@ Route.group(() => {
     "/members/:id",
     "Admin/members/MembersController.deleteMember"
   ).as("Deletemember");
+
+  //Route untuk management Procurement
+  Route.get(
+    "/admin/procurement",
+    "Admin/procurements/ProcurementsController.getItem"
+  ).as("GetAllItems");
+
+  Route.patch(
+    "/admin/procurement/:id",
+    "Admin/procurements/ProcurementsController.updateItem"
+  ).as("updateItem");
+
+  Route.get(
+    "/admin/procurement/:id",
+    "Admin/procurements/ProcurementsController.getDetailItem"
+  ).as("getDetailItems");
 })
   .prefix("/api")
   .middleware("auth")
