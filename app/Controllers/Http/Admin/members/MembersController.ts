@@ -2,12 +2,31 @@ import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import User from "App/Models/User";
 
 export default class MembersController {
-  public async getMembers({ response }: HttpContextContract) {
+  public async getMembers({ response, request }: HttpContextContract) {
+
+    const search = request.input("search");
+    const page = request.input("page", 1);
+    const limit = 10
+    const offset =  (page - 1) * limit
     try {
-      const members = await User.query()
-        .where("role", "member")
-        .where("is_active", "true")
-        .select("name", "username", "email", "nik", "address", "phone");
+
+     let whereCondition = (builder) => {
+      builder.where('role', 'member').where('is_active', true)
+      if (search){
+        builder.where('name', 'like', `%${search}`).orWhere('username', 'like', `%${search}`).orWhere('email', 'like', `%${search}`)
+      }
+    }
+
+    const membersQuery = User.query().where(whereCondition);
+    const members = await membersQuery
+      .select('id', 'name', 'nik', 'phone', 'address', 'username', 'email')
+      .limit(limit)
+      .offset(offset)
+
+    // Menghitung total data dan total halaman
+    const pagination = await membersQuery.paginate(page, limit);
+    const totalCount = pagination.total;
+    const totalPages = pagination.lastPage;
 
       if (!members.length) {
         return response.status(404).json({
@@ -19,6 +38,9 @@ export default class MembersController {
         status: "200",
         message: "Success Get Members",
         members: members,
+        page: page,
+        total_data: totalCount,
+        total_page: totalPages,
       });
     } catch (error) {
       return response.status(500).json(error.message);
