@@ -5,6 +5,11 @@ Route.post("/logout", "AuthController.logout").as("logout").middleware("auth");
 
 //Route Admin Management Member
 Route.group(() => {
+  //Route Dasboard
+  Route.get("/admin/dashboard", "Admin/DashboardController.index").as(
+    "Dashboard"
+  );
+  //Route Management Member
   Route.get("/members", "Admin/members/MembersController.getMembers").as(
     "Getmembers"
   );
@@ -44,6 +49,9 @@ Route.group(() => {
 
 //Route Member
 Route.group(() => {
+  Route.get("/member/dashboard", "Member/DashboardController.index").as(
+    "DashboardMember"
+  );
   Route.get('/member/profile', 'Member/ProcurementsController.getProfile').as('getProfile')
   Route.get('/member/procurement', 'Member/ProcurementsController.getItems').as('getItems')
   Route.post('/member/procurement', 'Member/ProcurementsController.storeItem').as('storeItems')

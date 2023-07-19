@@ -2,16 +2,62 @@ import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Database from "@ioc:Adonis/Lucid/Database";
 
 export default class ProcurementsController {
-  public async getItem({ response }: HttpContextContract) {
-    try {
-      const items = await Database.from("items").select("*");
-      const itemsId = items.map((items) => items.id);
+  public async getItem({ response, request }: HttpContextContract) {
+    const search =  request.input('request')
+    const categoryId = request.input('categoryId')
+    const status  = request.input('status')
 
-      const detailItems = await Database.from("detail_items")
-        .whereIn("detail_items.id", itemsId)
-        .select(
+    const page = request.input('page', 1)
+    const limit = 10
+    const offset =  (page - 1) * limit
+
+    const allowedStatus = ["Onprocces", "Approve", "Reject"];
+    try {
+
+      let whereCondition = {}
+      let statusCondition = "get all";
+
+      if (search && categoryId) {
+        whereCondition = {
+          "detail_items.name": { $like: `%${search}%` },
+          "detail_items.categoryId": categoryId
+        };
+        statusCondition = "search and category";
+      } else if (search) {
+        whereCondition = {
+          "detail_items.name": { $like: `%${search}%` },
+        };
+        statusCondition = "search";
+      } else if (categoryId) {
+        whereCondition = {
+          "detail_items.categoryId": categoryId,
+        };
+        statusCondition = "category";
+      } else if (status) {
+        if (!allowedStatus.includes(status)) {
+          return response.status(400).json({
+            status: "400",
+            message: "Please choose an available status: onprocces, approve, reject",
+          });
+        }
+        whereCondition = {
+          "items.status": status,
+        };
+        statusCondition = "status";
+      }
+
+      const items = await Database.from("items")
+      .leftJoin('users', 'items.userId', 'users.id')
+      .leftJoin('detail_items', 'items.id', 'detail_items.id')
+      .leftJoin('categories', 'detail_items.categoryId', 'categories.id')
+      .where(whereCondition)
+      .limit(limit)
+      .offset(offset)
+      .select(
+          'items.*',
+          'users.name as userName',
           "detail_items.name as itemName",
-          "detail_items.categoryId",
+          'detail_items.categoryId as detail_items_categoryId',
           "categories.name as categoryName",
           "detail_items.description",
           "detail_items.url",
@@ -19,22 +65,36 @@ export default class ProcurementsController {
           "detail_items.price",
           "detail_items.total",
           "detail_items.duedate"
-        )
-        .leftJoin("categories", "detail_items.categoryId", "categories.id");
+        );
 
-      const userId = items.map((items) => items.userId);
+      const totalCount = await Database.from("items")
+      .leftJoin('users', 'items.userId', 'users.id')
+      .leftJoin('detail_items', 'items.id', 'detail_items.id')
+      .leftJoin('categories', 'detail_items.categoryId', 'categories.id')
+      .where(whereCondition).count('* as total')
+      const totalPages = Math.ceil(totalCount[0].total / limit)
 
-      const users = await Database.from("users")
-        .whereIn("id", userId)
-        .select("name");
 
-      const data = {
-        users,
+         const data = {
         items,
-        detailItems,
+        page: page,
+        total_data: totalCount[0].total,
+        total_page: totalPages,
       };
 
-      return response.status(200).json({ status: "200", data });
+      if (items.length === 0){
+        return response.status(404).json({
+          status: "404",
+          message: "Item Not Found",
+        })
+      }else{
+        return response.status(200).json({
+          status: "200",
+          message: "Success Get Item",
+          data,
+          statusCondition
+        });
+      }
     } catch (error) {
       return response.status(500).json(error.message);
     }
@@ -43,21 +103,16 @@ export default class ProcurementsController {
   public async getDetailItem({ response, request }: HttpContextContract) {
     const itemsId = request.param("id");
     try {
-      const items = await Database.from("items")
-        .where("id", itemsId)
-        .select("*");
-      const itemsIds = items.map((items) => items.id);
 
-      if (items.length === 0) {
-        return response.status(400).json({
-          status: "400",
-          message: "Item not found",
-        });
+      let whereCondition= (builder) => {
+        builder.where('items.id', itemsId)
       }
 
-      const detailItems = await Database.from("detail_items")
-        .whereIn("detail_items.id", itemsIds)
+      const items = await Database.from("items")
+        .where(whereCondition)
         .select(
+          'items.*',
+          'users.name as userName',
           "detail_items.name as itemName",
           "detail_items.categoryId",
           "categories.name as categoryName",
@@ -67,21 +122,26 @@ export default class ProcurementsController {
           "detail_items.price",
           "detail_items.total",
           "detail_items.duedate"
-        )
-        .leftJoin("categories", "detail_items.categoryId", "categories.id");
+        )  .leftJoin('users', 'items.userId', 'users.id')
+        .leftJoin('detail_items', 'items.id', 'detail_items.id')
+        .leftJoin('categories', 'detail_items.categoryId', 'categories.id')
 
-      const userId = items.map((items) => items.userId);
+      if (items.length === 0) {
+        return response.status(400).json({
+          status: "400",
+          message: "Item not found",
+        });
+      }
 
-      const users = await Database.from("users")
-        .whereIn("id", userId)
-        .select("name");
-
-      const data = {
-        users,
+    const data = {
         items,
-        detailItems,
       };
-      return response.status(200).json({ status: "200", data });
+
+      return response.status(200).json({
+        status: "200",
+        message: "Success Get Item",
+        data
+      });
     } catch (error) {
       return response.status(500).json(error.massage);
     }
